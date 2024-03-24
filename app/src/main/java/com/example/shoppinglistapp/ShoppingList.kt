@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -63,7 +64,15 @@ fun ShoppingListApp() {
                 val item = listItems[index]
                 ShoppingList(
                     item = item,
-                    onEditClick = {},
+                    onEditClick = {
+                        listItems = listItems.map {
+                            if (it.id == item.id) {
+                                it.copy(isEditing = !it.isEditing)
+                            } else {
+                                it
+                            }
+                        }
+                    },
                     onDeleteClick = {
                         listItems = listItems.filter { it.id != item.id }
                     }
@@ -157,6 +166,47 @@ fun ShoppingList(
         }
         IconButton(onClick = onDeleteClick) {
             Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete")
+        }
+    }
+}
+
+
+@Composable
+fun ItemEditor(
+    item: ShoppingListItem,
+    onEditComplete: (String, Int) -> Unit,
+){
+    var editedName by remember { mutableStateOf(item.name) }
+    var editedQuantity by remember { mutableIntStateOf(item.quantity) }
+    var isEditing by remember { mutableStateOf(item.isEditing) }
+    Column {
+        OutlinedTextField(
+            value = editedName,
+            onValueChange = {
+                editedName = it
+            },
+            label = { Text("Item Name") },
+            singleLine = true,
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxWidth().wrapContentSize()
+        )
+        OutlinedTextField(
+            value = editedQuantity.toString(),
+            onValueChange = {
+                editedQuantity = it.toInt()
+            },
+            label = { Text("Quantity") },
+            singleLine = true,
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxWidth().wrapContentSize()
+        )
+        Button(onClick = {
+            isEditing = false
+            onEditComplete(editedName, editedQuantity)
+        }) {
+            Text(text = "Save")
         }
     }
 }
