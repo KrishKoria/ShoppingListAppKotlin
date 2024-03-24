@@ -2,15 +2,18 @@ package com.example.shoppinglistapp
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -25,22 +28,23 @@ data class ShoppingListItem(
     var isEditing: Boolean = false
 ) {
     fun displayText(): String {
-        return "$name x$quantity"
+        return "$name x $quantity"
     }
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShoppingListApp(){
+fun ShoppingListApp() {
     var listItems by remember { mutableStateOf(listOf<ShoppingListItem>()) }
     var showDialog by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf("") }
+    var quantity by remember { mutableIntStateOf(0) }
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center
     ) {
         Button(
-            onClick = { showDialog = !showDialog},
+            onClick = { showDialog = !showDialog },
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text(text = "Add Item")
@@ -59,11 +63,60 @@ fun ShoppingListApp(){
             }
         }
         if (showDialog) {
-            AlertDialog (
-                onDismissRequest = {showDialog = false}
-            ) {
-                Text(text = "Hello World")
+            AlertDialog(onDismissRequest = { showDialog = false }, confirmButton = {
+            Row(modifier = Modifier.padding(8.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Button(onClick = {
+                    if(name.isEmpty() || quantity == 0) {
+                        return@Button
+                    } else {
+                        listItems += ShoppingListItem(
+                            id = listItems.size+1,
+                            name = name,
+                            quantity = quantity
+                        )
+                        showDialog = false
+                        name = ""
+                        quantity = 0
+                    }
+                }) {
+                    Text(text = "Add")
+                }
+                Button(onClick = {
+                    showDialog = !showDialog
+                }) {
+                    Text(text = "Cancel")
+                }
             }
+            }, title = {
+                Text(
+                    text = "Add Item"
+                )
+            }, text = {
+                Column {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = {
+                            name = it
+                        },
+                        label = { Text("Item Name") },
+                        singleLine = true,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = quantity.toString(),
+                        onValueChange = {
+                            quantity = it.toInt()
+                        },
+                        label = { Text("Quantity") },
+                        singleLine = true,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth()
+                    )
+                }
+            })
         }
     }
 }
