@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -33,8 +34,8 @@ import androidx.compose.ui.unit.dp
 
 data class ShoppingListItem(
     val id: Int,
-    val name: String,
-    val quantity: Int,
+    var name: String,
+    var quantity: Int,
     var isEditing: Boolean = false
 )
 
@@ -60,86 +61,91 @@ fun ShoppingListApp() {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            items(listItems.size) { index ->
-                val item = listItems[index]
-                ShoppingList(
-                    item = item,
-                    onEditClick = {
-                        listItems = listItems.map {
-                            if (it.id == item.id) {
-                                it.copy(isEditing = !it.isEditing)
-                            } else {
-                                it
+            items(listItems) { item ->
+                if (item.isEditing) {
+                    ItemEditor(
+                        item = item,
+                        onEditComplete = { editedName, editedQuantity ->
+                            listItems = listItems.map { it.copy(isEditing = false) }
+                            val editedItem = listItems.find { it.id == item.id }
+                            editedItem?.let {
+                                it.name = editedName
+                                it.quantity = editedQuantity
                             }
                         }
-                    },
-                    onDeleteClick = {
-                        listItems = listItems.filter { it.id != item.id }
-                    }
-                )
+                    )
+                } else {
+                    ShoppingList(item = item, onEditClick = {
+                        listItems = listItems.map {
+                            it.copy(isEditing = it.id == item.id && !it.isEditing)
+                        }
+                    }, onDeleteClick = {
+                        listItems = listItems - item
+                    })
+                }
             }
         }
-        if (showDialog) {
-            AlertDialog(onDismissRequest = { showDialog = false }, confirmButton = {
-                Row(
+    }
+    if (showDialog) {
+        AlertDialog(onDismissRequest = { showDialog = false }, confirmButton = {
+            Row(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Button(onClick = {
+                    if (name.isEmpty() || quantity == 0) {
+                        return@Button
+                    } else {
+                        listItems += ShoppingListItem(
+                            id = listItems.size + 1,
+                            name = name,
+                            quantity = quantity
+                        )
+                        showDialog = false
+                        name = ""
+                        quantity = 0
+                    }
+                }) {
+                    Text(text = "Add")
+                }
+                Button(onClick = {
+                    showDialog = !showDialog
+                }) {
+                    Text(text = "Cancel")
+                }
+            }
+        }, title = {
+            Text(
+                text = "Add Item"
+            )
+        }, text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = {
+                        name = it
+                    },
+                    label = { Text("Item Name") },
+                    singleLine = true,
                     modifier = Modifier
                         .padding(8.dp)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Button(onClick = {
-                        if (name.isEmpty() || quantity == 0) {
-                            return@Button
-                        } else {
-                            listItems += ShoppingListItem(
-                                id = listItems.size + 1,
-                                name = name,
-                                quantity = quantity
-                            )
-                            showDialog = false
-                            name = ""
-                            quantity = 0
-                        }
-                    }) {
-                        Text(text = "Add")
-                    }
-                    Button(onClick = {
-                        showDialog = !showDialog
-                    }) {
-                        Text(text = "Cancel")
-                    }
-                }
-            }, title = {
-                Text(
-                    text = "Add Item"
+                        .fillMaxWidth()
                 )
-            }, text = {
-                Column {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = {
-                            name = it
-                        },
-                        label = { Text("Item Name") },
-                        singleLine = true,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = quantity.toString(),
-                        onValueChange = {
-                            quantity = it.toInt()
-                        },
-                        label = { Text("Quantity") },
-                        singleLine = true,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .fillMaxWidth()
-                    )
-                }
-            })
-        }
+                OutlinedTextField(
+                    value = quantity.toString(),
+                    onValueChange = {
+                        quantity = it.toIntOrNull() ?: 0
+                    },
+                    label = { Text("Quantity") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth()
+                )
+            }
+        })
     }
 }
 
@@ -162,7 +168,7 @@ fun ShoppingList(
         Text(text = item.name, modifier = Modifier.padding(8.dp))
         Text(text = "Qty : ${item.quantity}", modifier = Modifier.padding(8.dp))
         IconButton(onClick = onEditClick) {
-         Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit")
+            Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit")
         }
         IconButton(onClick = onDeleteClick) {
             Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete")
@@ -175,7 +181,7 @@ fun ShoppingList(
 fun ItemEditor(
     item: ShoppingListItem,
     onEditComplete: (String, Int) -> Unit,
-){
+) {
     var editedName by remember { mutableStateOf(item.name) }
     var editedQuantity by remember { mutableIntStateOf(item.quantity) }
     var isEditing by remember { mutableStateOf(item.isEditing) }
@@ -189,18 +195,20 @@ fun ItemEditor(
             singleLine = true,
             modifier = Modifier
                 .padding(8.dp)
-                .fillMaxWidth().wrapContentSize()
+                .fillMaxWidth()
+                .wrapContentSize()
         )
         OutlinedTextField(
             value = editedQuantity.toString(),
             onValueChange = {
-                editedQuantity = it.toInt()
+                editedQuantity = it.toIntOrNull() ?: 0
             },
             label = { Text("Quantity") },
             singleLine = true,
             modifier = Modifier
                 .padding(8.dp)
-                .fillMaxWidth().wrapContentSize()
+                .fillMaxWidth()
+                .wrapContentSize()
         )
         Button(onClick = {
             isEditing = false
