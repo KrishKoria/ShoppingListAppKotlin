@@ -1,5 +1,7 @@
 package com.example.shoppinglistapp
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,8 +9,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 data class ShoppingListItem(
@@ -26,11 +35,7 @@ data class ShoppingListItem(
     val name: String,
     val quantity: Int,
     var isEditing: Boolean = false
-) {
-    fun displayText(): String {
-        return "$name x $quantity"
-    }
-}
+)
 
 
 @Composable
@@ -56,37 +61,45 @@ fun ShoppingListApp() {
         ) {
             items(listItems.size) { index ->
                 val item = listItems[index]
-                Text(
-                    text = item.displayText(),
-                    modifier = Modifier.padding(8.dp)
+                ShoppingList(
+                    item = item,
+                    onEditClick = {},
+                    onDeleteClick = {
+                        listItems = listItems.filter { it.id != item.id }
+                    }
                 )
             }
         }
         if (showDialog) {
             AlertDialog(onDismissRequest = { showDialog = false }, confirmButton = {
-            Row(modifier = Modifier.padding(8.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Button(onClick = {
-                    if(name.isEmpty() || quantity == 0) {
-                        return@Button
-                    } else {
-                        listItems += ShoppingListItem(
-                            id = listItems.size+1,
-                            name = name,
-                            quantity = quantity
-                        )
-                        showDialog = false
-                        name = ""
-                        quantity = 0
+                Row(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Button(onClick = {
+                        if (name.isEmpty() || quantity == 0) {
+                            return@Button
+                        } else {
+                            listItems += ShoppingListItem(
+                                id = listItems.size + 1,
+                                name = name,
+                                quantity = quantity
+                            )
+                            showDialog = false
+                            name = ""
+                            quantity = 0
+                        }
+                    }) {
+                        Text(text = "Add")
                     }
-                }) {
-                    Text(text = "Add")
+                    Button(onClick = {
+                        showDialog = !showDialog
+                    }) {
+                        Text(text = "Cancel")
+                    }
                 }
-                Button(onClick = {
-                    showDialog = !showDialog
-                }) {
-                    Text(text = "Cancel")
-                }
-            }
             }, title = {
                 Text(
                     text = "Add Item"
@@ -117,6 +130,33 @@ fun ShoppingListApp() {
                     )
                 }
             })
+        }
+    }
+}
+
+@Composable
+fun ShoppingList(
+    item: ShoppingListItem,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .border(
+                border = BorderStroke(2.dp, color = Color.Cyan),
+                shape = RoundedCornerShape(20)
+            ),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = item.name, modifier = Modifier.padding(8.dp))
+        Text(text = "Qty : ${item.quantity}", modifier = Modifier.padding(8.dp))
+        IconButton(onClick = onEditClick) {
+         Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit")
+        }
+        IconButton(onClick = onDeleteClick) {
+            Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete")
         }
     }
 }
