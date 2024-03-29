@@ -52,7 +52,6 @@ android {
 
 dependencies {
     implementation(libs.retrofit)
-    implementation(libs.gson)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.maps.compose)
@@ -66,6 +65,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.play.services.location)
+    implementation(libs.retrofit2.converter.gson)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
