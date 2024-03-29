@@ -1,6 +1,10 @@
 package com.example.shoppinglistapp
 
+import android.Manifest
 import android.content.Context
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
 
 data class ShoppingListItem(
@@ -57,6 +62,31 @@ fun ShoppingListApp(
     var showDialog by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
     var quantity by remember { mutableIntStateOf(0) }
+    val requestPermission = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+        onResult = { permissions ->
+            if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true && permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
+                locationUtils.getLocationData(viewModel)
+            } else {
+                val rationaleRequired = ActivityCompat.shouldShowRequestPermissionRationale(
+                    context as MainActivity,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) || ActivityCompat.shouldShowRequestPermissionRationale(
+                    context,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+                if (rationaleRequired) {
+                    Toast.makeText(context, "Location Permission is required", Toast.LENGTH_LONG)
+                        .show()
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Location Permission is denied, please allow it in settings",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        })
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center
@@ -155,6 +185,23 @@ fun ShoppingListApp(
                         .padding(8.dp)
                         .fillMaxWidth()
                 )
+                Button(onClick = {
+                    if (locationUtils.hasPermission(context)) {
+                        locationUtils.getLocationData(viewModel)
+                        navController.navigate("locationSelection"){
+                            this.launchSingleTop = true
+                        }
+                    } else {
+                        requestPermission.launch(
+                            arrayOf(
+                                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                                android.Manifest.permission.ACCESS_COARSE_LOCATION
+                            )
+                        )
+                    }
+                }) {
+                    Text(text = "Address")
+                }
             }
         })
     }
@@ -176,14 +223,16 @@ fun ShoppingList(
             ),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Column(modifier = Modifier
-            .padding(8.dp)
-            .weight(1f)) {
+        Column(
+            modifier = Modifier
+                .padding(8.dp)
+                .weight(1f)
+        ) {
             Row {
                 Text(text = item.name, modifier = Modifier.padding(8.dp))
                 Text(text = "Qty : ${item.quantity}", modifier = Modifier.padding(8.dp))
             }
-            Row(modifier = Modifier.fillMaxWidth()){
+            Row(modifier = Modifier.fillMaxWidth()) {
                 Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Address")
                 Text(text = item.address, modifier = Modifier.padding(8.dp))
             }
