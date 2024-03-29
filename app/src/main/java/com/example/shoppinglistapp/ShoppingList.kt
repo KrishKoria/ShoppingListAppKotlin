@@ -95,7 +95,7 @@ fun ShoppingListApp(
             onClick = { showDialog = !showDialog },
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
-            Text(text = "Add Item")
+            Text(text = "Add a Shopping Item")
         }
         LazyColumn(
             modifier = Modifier
@@ -196,8 +196,8 @@ fun ShoppingListApp(
                     } else {
                         requestPermission.launch(
                             arrayOf(
-                                android.Manifest.permission.ACCESS_FINE_LOCATION,
-                                android.Manifest.permission.ACCESS_COARSE_LOCATION
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
                             )
                         )
                     }
